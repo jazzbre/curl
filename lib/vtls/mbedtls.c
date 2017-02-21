@@ -295,7 +295,7 @@ mbed_connect_step1(struct connectdata *conn,
       return CURLE_SSL_CRL_BADFILE;
     }
   }
-
+  
   infof(data, "mbedTLS: Connecting to %s:%d\n", hostname, port);
 
   mbedtls_ssl_config_init(&connssl->config);
@@ -443,6 +443,15 @@ mbed_connect_step1(struct connectdata *conn,
    */
   mbedtls_debug_set_threshold(4);
 #endif
+
+  /* give application a chance to interfere with mbedTLS set up. */
+  if(data->set.ssl.fsslctx) {
+    ret = (*data->set.ssl.fsslctx)(data, &connssl->config, data->set.ssl.fsslctxp);
+    if(ret) {
+      failf(data, "error signaled by mbedTLS ctx callback");
+      return CURLE_SSL_CERTPROBLEM;
+    }
+  }
 
   connssl->connecting_state = ssl_connect_2;
 
